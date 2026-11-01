@@ -1,0 +1,21 @@
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+local.file_match "falco" {
+  path_targets = [{"__path__" = "/var/log/falco/*.json", "job" = "falco"}]
+}
+
+loki.source.file "falco" {
+  targets    = local.file_match.falco.targets
+  forward_to = [loki.write.default.receiver]
+}
+
+loki.source.journal "system" {
+  path       = "/var/log/journal"
+  max_age    = "12h"
+  labels     = {job = "journal"}
+  forward_to = [loki.write.default.receiver]
+}
